@@ -1,12 +1,9 @@
-'use strict';
+"use strict";
 
-var serialport = require('serialport')
-  , Promise = require('bluebird')
-  , VError = require('verror')
-  , conn = null
-  , assert = require('assert')
-  , debug = require('debug')(require('./package.json').name);
-
+var Serialport = require("serialport"),
+  conn = null,
+  assert = require("assert"),
+  debug = require("debug")(require("./package.json").name);
 
 // Keep track of connection requests
 var connQ = [];
@@ -20,41 +17,40 @@ var connQ = [];
  * @param  {Object}   opts
  * @return {Promise | Socket}
  */
-module.exports = function (opts) {
-
+module.exports = function(opts) {
   assert.equal(
     typeof opts,
-    'object',
-    'an options object must be provided to obd-serial-connection'
+    "object",
+    "an options object must be provided to obd-serial-connection"
   );
 
   assert.equal(
     typeof opts.serialPath,
-    'string',
-    'opts.serialPath should be a string provided to obd-serial-connection'
+    "string",
+    "opts.serialPath should be a string provided to obd-serial-connection"
   );
 
   assert.equal(
     typeof opts.serialOpts,
-    'object',
-    'opts.serialOpts should be an Object provided to obd-serial-connection'
+    "object",
+    "opts.serialOpts should be an Object provided to obd-serial-connection"
   );
 
-  return function _obdSerialConnectorFn (configureFn) {
+  return function _obdSerialConnectorFn(configureFn) {
     assert.equal(
       typeof configureFn,
-      'function',
-      'you must provide a configureFn that returns a promise'
+      "function",
+      "you must provide a configureFn that returns a promise"
     );
 
-    return new Promise(function (resolve, reject) {
-      debug('creating serialport connection');
+    return new Promise(function(resolve, reject) {
+      debug("creating serialport connection");
 
       if (conn && conn.ready) {
-        debug('returning existing connection instance');
+        debug("returning existing connection instance");
         resolve(conn);
       } else {
-        debug('opening a serial connection');
+        debug("opening a serial connection");
 
         // Keep track of the promise(s) we're returning
         connQ.push({
@@ -63,14 +59,14 @@ module.exports = function (opts) {
         });
 
         // Create our connection
-        conn = new serialport.SerialPort(opts.serialPath, opts.serialOpts);
+        conn = new Serialport(opts.serialPath, opts.serialOpts);
 
         // Connect to the serial port
-        conn.on('open', function () {
+        conn.on("open", function() {
           onConnectionOpened(configureFn);
         });
 
-        conn.on('error', function (err) {
+        conn.on("error", function(err) {
           onConnectionOpened(configureFn, err);
         });
       }
@@ -83,17 +79,16 @@ module.exports = function (opts) {
  * Pollers will listen for events related to their PID
  * @param {String} str
  */
-function onSerialData (str) {
-  debug('received obd data %s', str);
+function onSerialData(str) {
+  debug("received obd data %s", str);
 }
-
 
 /**
  * Resolves/rejects any pending connection requests, depending on Error passed
  * @param  {Error} err
  */
-function respondToConnectionRequests (err) {
-  connQ.forEach(function (req) {
+function respondToConnectionRequests(err) {
+  connQ.forEach(function(req) {
     if (err) {
       req.reject(err);
     } else {
@@ -102,17 +97,15 @@ function respondToConnectionRequests (err) {
   });
 }
 
-
 /**
  * General callback for the "error" event on the connection to ensure
  * all errors are cpatured and logged.
  * @param  {Erorr} err
  */
-function onSerialError (err) {
-  debug('serial emitted an error %s', err.toString());
+function onSerialError(err) {
+  debug("serial emitted an error %s", err.toString());
   debug(err.stack);
 }
-
 
 /**
  * Handler for the "open" event for connections.
@@ -122,27 +115,26 @@ function onSerialError (err) {
  *
  * @param  {Error} err
  */
-function onConnectionOpened (configureFn, err) {
+function onConnectionOpened(configureFn, err) {
   if (err) {
-    err = new VError(err, 'failed to connect to ecu');
+    err = new Error(err, "failed to connect to ecu");
 
-    debug('error establishing a serial connection: %s', err);
+    debug("error establishing a serial connection: %s", err);
 
     respondToConnectionRequests(err);
   } else {
-    debug('serial connection established, running configuration function');
+    debug("serial connection established, running configuration function");
 
     // Bind listeners for data and errors
-    conn.on('error', onSerialError);
-    conn.on('data', onSerialData);
+    conn.on("error", onSerialError);
+    conn.on("data", onSerialData);
 
-    return configureFn(conn)
-      .then(function onConfigurationComplete () {
-        debug('finished running configuration function, returning connection');
+    return configureFn(conn).then(function onConfigurationComplete() {
+      debug("finished running configuration function, returning connection");
 
-        conn.ready = true;
+      conn.ready = true;
 
-        respondToConnectionRequests();
-      });
+      respondToConnectionRequests();
+    });
   }
 }

@@ -4,7 +4,7 @@
   "description": "A serial connection wrapper for use with odb-parser",
   "main": "index.js",
   "scripts": {
-    "test": "env NODE_PATH=. mocha ./test"
+    "test": "mocha ./test"
   },
   "keywords": [
     "obd",
@@ -22,11 +22,8 @@
   "author": "Evan Shortiss",
   "license": "MIT",
   "dependencies": {
-    "bluebird": "~3.3.1",
     "debug": "~2.3.3",
-    "serialport": "~2.1.0",
-    "verror": "~1.6.1",
-    "xtend": "~4.0.1"
+    "serialport": "~7.1.5"
   },
   "devDependencies": {
     "chai": "~3.5.0",
